@@ -40,4 +40,11 @@
         android:name="com.marcinadd.charchat.ui.send.SendFragment"
         android:label="@string/menu_send"
         tools:layout="@layout/fragment_send" />
+
+    <fragment
+        android:id="@+id/nav_chat"
+        android:name="com.marcinadd.charchat.ui.chat.DialogsListFragment"
+        android:label="@string/menu_chat"
+        tools:layout="@layout/fragment_dialogs_list" />
+
 </navigation>
