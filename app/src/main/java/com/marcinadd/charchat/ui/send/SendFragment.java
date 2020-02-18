@@ -40,7 +40,8 @@ public class SendFragment extends Fragment {
                 textView.setText(s);
             }
         });
-        ChatService.getInstance().getChats();
+//        ChatService.getInstance().getChats();
+        ChatService.getInstance().createNewChat("user");
         return root;
     }
 
