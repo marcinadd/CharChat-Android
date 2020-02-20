@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
@@ -24,6 +25,8 @@ public class DialogsListFragment extends Fragment
         implements OnDialogsLoadedListener, DialogsListAdapter.OnDialogClickListener {
 
     private DialogsListAdapter dialogsListAdapter;
+    private ProgressBar progressLoader;
+
     private View mView;
 
     @Override
@@ -31,6 +34,7 @@ public class DialogsListFragment extends Fragment
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         mView = inflater.inflate(R.layout.fragment_dialogs_list, container, false);
+        progressLoader = mView.findViewById(R.id.progress_loader);
         DialogsList dialogsListView = mView.findViewById(R.id.dialogsList);
         dialogsListAdapter = new DialogsListAdapter<Dialog>(null);
         dialogsListView.setAdapter(dialogsListAdapter);
@@ -41,7 +45,8 @@ public class DialogsListFragment extends Fragment
 
     @Override
     public void onDialogsLoaded(List<Dialog> dialogs) {
-        dialogsListAdapter.setItems(dialogs);
+        dialogsListAdapter.addItems(dialogs);
+        progressLoader.setVisibility(View.GONE);
     }
 
     @Override
@@ -58,5 +63,7 @@ public class DialogsListFragment extends Fragment
     public void onDestroy() {
         super.onDestroy();
         mView = null;
+        progressLoader = null;
+        dialogsListAdapter = null;
     }
 }

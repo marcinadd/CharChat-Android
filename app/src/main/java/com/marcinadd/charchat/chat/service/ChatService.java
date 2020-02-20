@@ -21,7 +21,6 @@ import com.marcinadd.charchat.chat.model.User;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +32,7 @@ public class ChatService {
     private static final String CHATS = "chats";
     private static final String RECEIVER = "receiver";
     private static final String CREATOR = "creator";
+    private static final String CREATED_AT = "createdAt";
 
     private ChatService() {
     }
@@ -119,7 +119,6 @@ public class ChatService {
                 .get();
 
         List<Task<QuerySnapshot>> tasks = new ArrayList<>();
-
         tasks.add(taskA);
         tasks.add(taskB);
 
@@ -127,21 +126,61 @@ public class ChatService {
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
-                        List<Dialog> dialogs = new ArrayList<>();
-                        for (QueryDocumentSnapshot document : taskA.getResult()
-                        ) {
-                            dialogs.add(createDialogFromQueryDocumentSnapshot(document, firebaseUser.getUid()));
-                        }
-                        for (QueryDocumentSnapshot document : taskB.getResult()
-                        ) {
-                            dialogs.add(createDialogFromQueryDocumentSnapshot(document, firebaseUser.getUid()));
-                        }
-                        listener.onDialogsLoaded(dialogs);
+                        final List<Dialog> dialogList = new ArrayList<>();
+                        String currentUserId = firebaseUser.getUid();
+                        createDialogs(taskA.getResult(), currentUserId, db, onDialogsCreatedListener(dialogList, listener));
+                        createDialogs(taskB.getResult(), currentUserId, db, onDialogsCreatedListener(dialogList, listener));
                     }
                 });
     }
 
-    public Dialog createDialogFromQueryDocumentSnapshot(QueryDocumentSnapshot document, String currentUserId) {
+    private OnDialogsCreatedListener onDialogsCreatedListener(
+            final List<Dialog> dialogList,
+            final OnDialogsLoadedListener listener
+    ) {
+        return new OnDialogsCreatedListener() {
+            @Override
+            public void onDialogsCreated(List<Dialog> dialogs) {
+                dialogList.addAll(dialogs);
+                listener.onDialogsLoaded(dialogs);
+            }
+        };
+    }
+
+    //     FIXME Fix Loading sorting via date
+    private void createDialogs(final QuerySnapshot querySnapshot, final String currentUserId, FirebaseFirestore db, final OnDialogsCreatedListener listener) {
+        final List<Dialog> dialogs = new ArrayList<>();
+        final List<Task<QuerySnapshot>> tasks = new ArrayList<>();
+        for (final QueryDocumentSnapshot dialogDocument : querySnapshot
+        ) {
+            Task<QuerySnapshot> task = db.collection(getMessagesCollectionPath(dialogDocument.getId()))
+                    .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+                    .limit(1)
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            for (QueryDocumentSnapshot messageDocument : task.getResult()
+                            ) {
+                                Message message = createMessageFromQueryDocumentSnapshot(messageDocument);
+                                Dialog dialog = createDialogFromQueryDocumentSnapshot(dialogDocument, currentUserId, message);
+                                dialogs.add(dialog);
+                            }
+                        }
+                    });
+            tasks.add(task);
+        }
+
+        Tasks.whenAll(tasks)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        listener.onDialogsCreated(dialogs);
+                    }
+                });
+    }
+
+    private Dialog createDialogFromQueryDocumentSnapshot(QueryDocumentSnapshot document, String currentUserId, Message message) {
         Map<String, Object> data = document.getData();
         HashMap<String, String> creatorMap = (HashMap<String, String>) data.get(CREATOR);
         HashMap<String, String> receiverMap = (HashMap<String, String>) data.get(RECEIVER);
@@ -155,8 +194,6 @@ public class ChatService {
         } else {
             chatDialogUser = new User(receiver.getUid().trim(), receiver.getUsername(), null);
         }
-
-        Message message = new Message("94949", "This is sample message", chatDialogUser, new Date());
         List<User> users = Collections.singletonList(chatDialogUser);
         return new Dialog(document.getId(), null, chatDialogUser.getName(), users, message, 30);
 
@@ -166,10 +203,9 @@ public class ChatService {
         Map<String, Object> data = document.getData();
         User user = new User((String) data.get("senderUid"), null, null);
 
-        Timestamp timestamp = (Timestamp) data.get("createdAt");
+        Timestamp timestamp = (Timestamp) data.get(CREATED_AT);
         String text = (String) data.get("text");
         return new Message(document.getId(), text, user, timestamp.toDate());
-
     }
 
     public void sendMessage(Message message, String chatId) {
@@ -182,6 +218,7 @@ public class ChatService {
         final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection(getMessagesCollectionPath(chatId))
+                .orderBy(CREATED_AT, Query.Direction.DESCENDING)
                 .get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     List<Message> messages = new ArrayList<>();
@@ -204,6 +241,10 @@ public class ChatService {
     interface Callback {
         void onSuccess(QueryDocumentSnapshot document);
         void onFailed();
+    }
+
+    private interface OnDialogsCreatedListener {
+        void onDialogsCreated(List<Dialog> dialogs);
     }
 
 }
