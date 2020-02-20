@@ -7,32 +7,56 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 
 import com.marcinadd.charchat.R;
 import com.marcinadd.charchat.chat.model.Dialog;
+import com.marcinadd.charchat.chat.model.User;
+import com.marcinadd.charchat.chat.service.ChatService;
+import com.marcinadd.charchat.chat.service.OnDialogsLoadedListener;
+import com.stfalcon.chatkit.commons.models.IDialog;
 import com.stfalcon.chatkit.dialogs.DialogsList;
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter;
 
-/**
- * A simple {@link Fragment} subclass.
- */
-public class DialogsListFragment extends Fragment {
+import java.util.List;
 
+public class DialogsListFragment extends Fragment
+        implements OnDialogsLoadedListener, DialogsListAdapter.OnDialogClickListener {
 
-    public DialogsListFragment() {
-        // Required empty public constructor
-    }
-
+    private DialogsListAdapter dialogsListAdapter;
+    private View mView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View mView = inflater.inflate(R.layout.fragment_dialogs_list, container, false);
+        mView = inflater.inflate(R.layout.fragment_dialogs_list, container, false);
         DialogsList dialogsListView = mView.findViewById(R.id.dialogsList);
-        DialogsListAdapter dialogsListAdapter = new DialogsListAdapter<Dialog>(null);
+        dialogsListAdapter = new DialogsListAdapter<Dialog>(null);
         dialogsListView.setAdapter(dialogsListAdapter);
+        dialogsListAdapter.setOnDialogClickListener(this);
+        ChatService.getInstance().getChats(this);
         return mView;
     }
 
+    @Override
+    public void onDialogsLoaded(List<Dialog> dialogs) {
+        dialogsListAdapter.setItems(dialogs);
+    }
+
+    @Override
+    public void onDialogClick(IDialog dialog) {
+        DialogsListFragmentDirections.ActionDialogsListFragmentToMessagesListFragment action =
+                DialogsListFragmentDirections.actionDialogsListFragmentToMessagesListFragment();
+        User user = (User) dialog.getUsers().get(0);
+        action.setUserUid(user.getId());
+        action.setChatUid(dialog.getId());
+        Navigation.findNavController(mView).navigate(action);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mView = null;
+    }
 }

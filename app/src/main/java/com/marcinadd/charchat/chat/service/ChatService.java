@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -12,6 +13,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.marcinadd.charchat.chat.db.model.ChatMessage;
 import com.marcinadd.charchat.chat.db.model.ChatUser;
 import com.marcinadd.charchat.chat.model.Dialog;
 import com.marcinadd.charchat.chat.model.Message;
@@ -73,8 +75,8 @@ public class ChatService {
                                                   DocumentReference referenceReceiver,
                                                   String receiverUsername) {
         Map<String, Object> sampleChat = new HashMap<>();
-        ChatUser creatorModel = new ChatUser(referenceCreator.getId(), "Secret");
-        ChatUser receiverModel = new ChatUser(referenceReceiver.getId(), receiverUsername);
+        ChatUser creatorModel = new ChatUser(referenceCreator.getId().trim(), "Secret");
+        ChatUser receiverModel = new ChatUser(referenceReceiver.getId().trim(), receiverUsername);
         sampleChat.put("creator_reference", referenceCreator);
         sampleChat.put("receiver_reference", referenceReceiver);
         sampleChat.put(CREATOR, creatorModel);
@@ -144,9 +146,8 @@ public class ChatService {
         HashMap<String, String> creatorMap = (HashMap<String, String>) data.get(CREATOR);
         HashMap<String, String> receiverMap = (HashMap<String, String>) data.get(RECEIVER);
 
-
-        ChatUser creator = new ChatUser(creatorMap.get("uid"), creatorMap.get("username"));
-        ChatUser receiver = new ChatUser(receiverMap.get("uid"), receiverMap.get("username"));
+        ChatUser creator = new ChatUser(creatorMap.get("uid"), creatorMap.get(USERNAME));
+        ChatUser receiver = new ChatUser(receiverMap.get("uid"), receiverMap.get(USERNAME));
 
         User chatDialogUser;
         if (!creator.getUid().equals(currentUserId)) {
@@ -159,7 +160,44 @@ public class ChatService {
         List<User> users = Collections.singletonList(chatDialogUser);
         return new Dialog(document.getId(), null, chatDialogUser.getName(), users, message, 30);
 
+    }
 
+    private Message createMessageFromQueryDocumentSnapshot(QueryDocumentSnapshot document) {
+        Map<String, Object> data = document.getData();
+        User user = new User((String) data.get("senderUid"), null, null);
+
+        Timestamp timestamp = (Timestamp) data.get("createdAt");
+        String text = (String) data.get("text");
+        return new Message(document.getId(), text, user, timestamp.toDate());
+
+    }
+
+    public void sendMessage(Message message, String chatId) {
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection(getMessagesCollectionPath(chatId))
+                .document().set(new ChatMessage(message));
+    }
+
+    public void getMessagesForSpecificChat(String chatId, final OnMessagesLoadedListener listener) {
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection(getMessagesCollectionPath(chatId))
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    List<Message> messages = new ArrayList<>();
+
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            messages.add(createMessageFromQueryDocumentSnapshot(document));
+                        }
+                        listener.onMessagesLoaded(messages);
+                    }
+                });
+    }
+
+    private String getMessagesCollectionPath(String chatId) {
+        return CHATS + "/" + (chatId.trim()) + "/messages";
     }
 
 

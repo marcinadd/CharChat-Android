@@ -40,11 +40,35 @@
         android:name="com.marcinadd.charchat.ui.send.SendFragment"
         android:label="@string/menu_send"
         tools:layout="@layout/fragment_send" />
-
+    <fragment
+        android:id="@+id/messagesListFragment"
+        android:name="com.marcinadd.charchat.ui.chat.MessagesListFragment"
+        android:label="fragment_messages_list"
+        tools:layout="@layout/fragment_messages_list">
+        <argument
+            android:name="user_uid"
+            android:defaultValue=" "
+            app:argType="string" />
+        <argument
+            android:name="chat_uid"
+            android:defaultValue=" "
+            app:argType="string" />
+    </fragment>
     <fragment
         android:id="@+id/nav_chat"
         android:name="com.marcinadd.charchat.ui.chat.DialogsListFragment"
-        android:label="@string/menu_chat"
-        tools:layout="@layout/fragment_dialogs_list" />
+        android:label="fragment_dialogs_list"
+        tools:layout="@layout/fragment_dialogs_list">
+        <action
+            android:id="@+id/action_dialogsListFragment_to_messagesListFragment"
+            app:destination="@id/messagesListFragment">
+            <argument
+                android:name="user_uid"
+                android:defaultValue=" " />
+            <argument
+                android:name="chat_uid"
+                android:defaultValue=" " />
+        </action>
+    </fragment>
 
 </navigation>

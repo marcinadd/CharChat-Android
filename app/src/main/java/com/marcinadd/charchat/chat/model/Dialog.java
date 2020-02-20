@@ -59,4 +59,16 @@ public class Dialog implements IDialog {
     public int getUnreadCount() {
         return unreadCount;
     }
+
+    @Override
+    public String toString() {
+        return "Dialog{" +
+                "id='" + id + '\'' +
+                ", dialogPhoto='" + dialogPhoto + '\'' +
+                ", dialogName='" + dialogName + '\'' +
+                ", users=" + users +
+                ", lastMessage=" + lastMessage +
+                ", unreadCount=" + unreadCount +
+                '}';
+    }
 }

@@ -11,40 +11,35 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.marcinadd.charchat.R;
 import com.marcinadd.charchat.chat.model.Message;
+import com.marcinadd.charchat.chat.model.User;
+import com.marcinadd.charchat.chat.service.ChatService;
+import com.marcinadd.charchat.chat.service.OnMessagesLoadedListener;
+import com.stfalcon.chatkit.messages.MessageInput;
 import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
 
-public class MessagesListFragment extends Fragment {
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+import java.util.Date;
+import java.util.List;
 
-    private String mParam1;
-    private String mParam2;
+public class MessagesListFragment extends Fragment implements MessageInput.InputListener, OnMessagesLoadedListener {
+
+    private String chatId;
+    private String anotherUserUid;
+    private String currentUserUid;
+
 
     private MessagesListAdapter<Message> adapter;
     private FirebaseUser firebaseUser;
-
-    public MessagesListFragment() {
-    }
-
-    // TODO: Rename and change types and number of parameters
-    public static MessagesListFragment newInstance(String param1, String param2) {
-        MessagesListFragment fragment = new MessagesListFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            anotherUserUid = MessagesListFragmentArgs.fromBundle(getArguments()).getUserUid();
+            chatId = MessagesListFragmentArgs.fromBundle(getArguments()).getChatUid();
         }
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        currentUserUid = firebaseUser.getUid();
     }
 
     @Override
@@ -55,8 +50,26 @@ public class MessagesListFragment extends Fragment {
         adapter = new MessagesListAdapter<>(firebaseUser.getUid(), null);
         messagesList.setAdapter(adapter);
 
+        MessageInput messageInput = mView.findViewById(R.id.input);
+        messageInput.setInputListener(this);
+
+        ChatService.getInstance().getMessagesForSpecificChat(chatId, this);
 
         return mView;
     }
 
+    @Override
+    public boolean onSubmit(CharSequence input) {
+        Message message = new Message(null, input.toString(), new User(currentUserUid, null, null), new Date());
+        adapter.addToStart(message, true);
+        ChatService.getInstance().sendMessage(message, chatId);
+
+        return true;
+    }
+
+
+    @Override
+    public void onMessagesLoaded(List<Message> messages) {
+        adapter.addToEnd(messages, false);
+    }
 }
