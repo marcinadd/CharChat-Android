@@ -54,6 +54,7 @@
             android:defaultValue=" "
             app:argType="string" />
     </fragment>
+
     <fragment
         android:id="@+id/nav_chat"
         android:name="com.marcinadd.charchat.ui.chat.DialogsListFragment"
@@ -71,4 +72,9 @@
         </action>
     </fragment>
 
+    <fragment
+        android:id="@id/nav_search"
+        android:name="com.marcinadd.charchat.people.SearchPeopleFragment"
+        android:label="@string/menu_search"
+        tools:layout="@layout/fragment_search_people" />
 </navigation>

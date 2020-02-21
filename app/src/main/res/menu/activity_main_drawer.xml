@@ -20,6 +20,11 @@
             android:id="@+id/nav_tools"
             android:icon="@drawable/ic_menu_manage"
             android:title="@string/menu_tools" />
+        <item
+            android:id="@+id/nav_search"
+            android:icon="@drawable/ic_search_black_24dp"
+            android:title="@string/menu_search" />
+
     </group>
 
     <item android:title="Communicate">
