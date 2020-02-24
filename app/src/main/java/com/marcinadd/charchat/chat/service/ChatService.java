@@ -14,7 +14,6 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.marcinadd.charchat.chat.db.model.ChatMessage;
-import com.marcinadd.charchat.chat.db.model.ChatUser;
 import com.marcinadd.charchat.chat.model.Dialog;
 import com.marcinadd.charchat.chat.model.Message;
 import com.marcinadd.charchat.chat.model.User;
@@ -27,12 +26,16 @@ import java.util.Map;
 
 public class ChatService {
     private static final ChatService ourInstance = new ChatService();
+
     private static final String USER_CREDENTIALS = "user_credentials";
     private static final String USERNAME = "username";
     private static final String CHATS = "chats";
     private static final String RECEIVER = "receiver";
     private static final String CREATOR = "creator";
     private static final String CREATED_AT = "createdAt";
+    private static final String RECEIVER_REFERENCE = "receiver_reference";
+    private static final String CREATOR_REFERENCE = "creator_reference";
+    private static final String CREATOR_HIDDEN = "creator_hidden";
 
     private ChatService() {
     }
@@ -71,14 +74,48 @@ public class ChatService {
 
     }
 
-    public Map<String, Object> createChatMapArray(DocumentReference referenceCreator,
-                                                  DocumentReference referenceReceiver,
-                                                  String receiverUsername) {
+    public void getChatsForUserUidAndCurrentUser(String otherUserUid) {
+        final FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference currentUser = db.collection(USER_CREDENTIALS).document(firebaseUser.getUid());
+        DocumentReference otherUser = db.collection(USER_CREDENTIALS).document(otherUserUid);
+
+
+        List<Task<QuerySnapshot>> tasks = new ArrayList<>();
+
+        final Task<QuerySnapshot> taskA = db.collection(CHATS)
+                .whereEqualTo(CREATOR_REFERENCE, otherUser)
+                .whereEqualTo(RECEIVER_REFERENCE, currentUser)
+                .whereEqualTo(CREATOR_HIDDEN, false)
+                .get();
+
+        final Task<QuerySnapshot> taskB = db.collection(CHATS)
+                .whereEqualTo(CREATOR_REFERENCE, currentUser)
+                .whereEqualTo(RECEIVER_REFERENCE, otherUser)
+                .get();
+
+        tasks.add(taskA);
+        tasks.add(taskB);
+
+
+        Tasks.whenAll(tasks)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+
+                    }
+                });
+    }
+
+
+    private Map<String, Object> createChatMapArray(DocumentReference referenceCreator,
+                                                   DocumentReference referenceReceiver,
+                                                   String receiverUsername) {
         Map<String, Object> sampleChat = new HashMap<>();
-        ChatUser creatorModel = new ChatUser(referenceCreator.getId().trim(), "Secret");
-        ChatUser receiverModel = new ChatUser(referenceReceiver.getId().trim(), receiverUsername);
-        sampleChat.put("creator_reference", referenceCreator);
-        sampleChat.put("receiver_reference", referenceReceiver);
+        User creatorModel = new User(referenceCreator.getId().trim(), "Secret", null);
+        User receiverModel = new User(referenceReceiver.getId().trim(), receiverUsername, null);
+        sampleChat.put(CREATOR_REFERENCE, referenceCreator);
+        sampleChat.put(RECEIVER_REFERENCE, referenceReceiver);
         sampleChat.put(CREATOR, creatorModel);
         sampleChat.put(RECEIVER, receiverModel);
         sampleChat.put("creator_hidden", true);
@@ -111,11 +148,11 @@ public class ChatService {
 
 
         final Task<QuerySnapshot> taskA = db.collection(CHATS)
-                .whereEqualTo("receiver_reference", userReference)
+                .whereEqualTo(RECEIVER_REFERENCE, userReference)
                 .get();
 
         final Task<QuerySnapshot> taskB = db.collection(CHATS)
-                .whereEqualTo("creator_reference", userReference)
+                .whereEqualTo(CREATOR_REFERENCE, userReference)
                 .get();
 
         List<Task<QuerySnapshot>> tasks = new ArrayList<>();
@@ -185,14 +222,14 @@ public class ChatService {
         HashMap<String, String> creatorMap = (HashMap<String, String>) data.get(CREATOR);
         HashMap<String, String> receiverMap = (HashMap<String, String>) data.get(RECEIVER);
 
-        ChatUser creator = new ChatUser(creatorMap.get("uid"), creatorMap.get(USERNAME));
-        ChatUser receiver = new ChatUser(receiverMap.get("uid"), receiverMap.get(USERNAME));
+        User creator = new User(creatorMap.get("uid"), creatorMap.get(USERNAME), null);
+        User receiver = new User(receiverMap.get("uid"), receiverMap.get(USERNAME), null);
 
         User chatDialogUser;
-        if (!creator.getUid().equals(currentUserId)) {
-            chatDialogUser = new User(creator.getUid().trim(), creator.getUsername(), null);
+        if (!creator.getId().equals(currentUserId)) {
+            chatDialogUser = new User(creator.getId().trim(), creator.getName(), null);
         } else {
-            chatDialogUser = new User(receiver.getUid().trim(), receiver.getUsername(), null);
+            chatDialogUser = new User(receiver.getId().trim(), receiver.getName(), null);
         }
         List<User> users = Collections.singletonList(chatDialogUser);
         return new Dialog(document.getId(), null, chatDialogUser.getName(), users, message, 30);

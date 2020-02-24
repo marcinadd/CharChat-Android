@@ -1,4 +1,4 @@
-package com.marcinadd.charchat.people;
+package com.marcinadd.charchat.ui.people;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,15 +9,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.marcinadd.charchat.R;
 import com.marcinadd.charchat.chat.model.User;
+import com.marcinadd.charchat.people.OnUserListFragmentInteractionListener;
 
 import java.util.List;
 
 public class MyUserRecyclerViewAdapter extends RecyclerView.Adapter<MyUserRecyclerViewAdapter.ViewHolder> {
 
     private final List<User> mValues;
-    private final SearchPeopleFragment.OnListFragmentInteractionListener mListener;
+    private final OnUserListFragmentInteractionListener mListener;
 
-    public MyUserRecyclerViewAdapter(List<User> items, SearchPeopleFragment.OnListFragmentInteractionListener listener) {
+    public MyUserRecyclerViewAdapter(List<User> items, OnUserListFragmentInteractionListener listener) {
         mValues = items;
         mListener = listener;
     }

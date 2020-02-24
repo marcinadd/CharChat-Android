@@ -1,4 +1,4 @@
-package com.marcinadd.charchat.people;
+package com.marcinadd.charchat.ui.people;
 
 
 import android.os.Bundle;
@@ -9,33 +9,40 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.marcinadd.charchat.R;
 import com.marcinadd.charchat.chat.model.User;
+import com.marcinadd.charchat.people.OnUserListFragmentInteractionListener;
 import com.marcinadd.charchat.people.service.OnPeopleSearchLoadedListener;
 import com.marcinadd.charchat.people.service.PeopleService;
+import com.marcinadd.charchat.ui.chat.DialogsListFragmentDirections;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoadedListener {
+public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoadedListener, OnUserListFragmentInteractionListener {
     private ProgressBar progressLoader;
     private MyUserRecyclerViewAdapter adapter;
+    private TextView searchCenterText;
+    private View mView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         setHasOptionsMenu(true);
-        View mView = inflater.inflate(R.layout.fragment_search_people, container, false);
+        mView = inflater.inflate(R.layout.fragment_search_people, container, false);
         progressLoader = mView.findViewById(R.id.progress_loader);
-        RecyclerView recyclerView = mView.findViewById(R.id.recyclerView);
+        searchCenterText = mView.findViewById(R.id.searchCenterText);
 
+        RecyclerView recyclerView = mView.findViewById(R.id.recyclerView);
         initRecycler(recyclerView);
 
         return mView;
@@ -44,7 +51,7 @@ public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoad
     private void initRecycler(RecyclerView recyclerView) {
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 1));
         List<User> users = new ArrayList<>();
-        adapter = new MyUserRecyclerViewAdapter(users, null);
+        adapter = new MyUserRecyclerViewAdapter(users, this);
         recyclerView.setAdapter(adapter);
     }
 
@@ -78,10 +85,21 @@ public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoad
     @Override
     public void onPeopleLoadedListener(List<User> users) {
         adapter.setData(users);
+        if (users.size() != 0) {
+            searchCenterText.setVisibility(View.GONE);
+        } else {
+            searchCenterText.setText(getResources().getString(R.string.not_found));
+            searchCenterText.setVisibility(View.VISIBLE);
+        }
         progressLoader.setVisibility(View.GONE);
+
     }
 
-    public interface OnListFragmentInteractionListener {
-        void onListFragmentInteraction(User item);
+    @Override
+    public void onListFragmentInteraction(User item) {
+        //TODO Implement chat loading
+        DialogsListFragmentDirections.ActionDialogsListFragmentToMessagesListFragment action = DialogsListFragmentDirections.actionDialogsListFragmentToMessagesListFragment();
+        action.setUserUid(item.getId());
+        Navigation.findNavController(mView).navigate(action);
     }
 }
