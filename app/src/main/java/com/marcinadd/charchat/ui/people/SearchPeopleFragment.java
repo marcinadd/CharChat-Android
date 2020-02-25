@@ -18,7 +18,11 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.marcinadd.charchat.R;
+import com.marcinadd.charchat.chat.db.model.Chat;
 import com.marcinadd.charchat.chat.model.User;
+import com.marcinadd.charchat.chat.service.ChatService;
+import com.marcinadd.charchat.chat.service.OnChatCreatedListener;
+import com.marcinadd.charchat.chat.service.OnChatsLoadedListener;
 import com.marcinadd.charchat.people.OnUserListFragmentInteractionListener;
 import com.marcinadd.charchat.people.service.OnPeopleSearchLoadedListener;
 import com.marcinadd.charchat.people.service.PeopleService;
@@ -27,7 +31,7 @@ import com.marcinadd.charchat.ui.chat.DialogsListFragmentDirections;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoadedListener, OnUserListFragmentInteractionListener {
+public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoadedListener, OnUserListFragmentInteractionListener, OnChatsLoadedListener {
     private ProgressBar progressLoader;
     private MyUserRecyclerViewAdapter adapter;
     private TextView searchCenterText;
@@ -98,8 +102,30 @@ public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoad
     @Override
     public void onListFragmentInteraction(User item) {
         //TODO Implement chat loading
+
+        ChatService.getInstance().getChatsForUserUidAndCurrentUser(item.getId(), this);
+    }
+
+    @Override
+    public void onChatsLoaded(List<Chat> chats, String otherUserUid) {
+        if (chats.size() == 0) {
+            // Create new chat and enter it
+            ChatService.getInstance().createNewChat(otherUserUid, new OnChatCreatedListener() {
+                @Override
+                public void onChatCreated(String userUid, String chatId) {
+                    navigateToChat(userUid, chatId);
+                }
+            });
+        } else {
+            //TODO Show list of anonymous chats
+            navigateToChat(otherUserUid, chats.get(0).getId());
+        }
+    }
+
+    private void navigateToChat(final String userUid, final String chatId) {
         DialogsListFragmentDirections.ActionDialogsListFragmentToMessagesListFragment action = DialogsListFragmentDirections.actionDialogsListFragmentToMessagesListFragment();
-        action.setUserUid(item.getId());
+        action.setUserUid(userUid);
+        action.setChatUid(chatId);
         Navigation.findNavController(mView).navigate(action);
     }
 }

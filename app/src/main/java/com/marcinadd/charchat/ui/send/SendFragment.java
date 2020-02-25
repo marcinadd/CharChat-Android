@@ -22,7 +22,6 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.marcinadd.charchat.R;
-import com.marcinadd.charchat.chat.service.ChatService;
 
 public class SendFragment extends Fragment {
 
@@ -41,7 +40,7 @@ public class SendFragment extends Fragment {
             }
         });
 //        ChatService.getInstance().getChats();
-        ChatService.getInstance().createNewChat("user");
+//        ChatService.getInstance().createNewChat("user");
         return root;
     }
 

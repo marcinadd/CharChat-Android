@@ -3,6 +3,7 @@ package com.marcinadd.charchat.chat.service;
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
@@ -13,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.marcinadd.charchat.chat.db.model.Chat;
 import com.marcinadd.charchat.chat.db.model.ChatMessage;
 import com.marcinadd.charchat.chat.model.Dialog;
 import com.marcinadd.charchat.chat.model.Message;
@@ -44,7 +46,8 @@ public class ChatService {
         return ourInstance;
     }
 
-    public void createNewChat(final String username) {
+    @Deprecated
+    public void createNewChatViaUsername(final String username) {
         final FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -74,11 +77,29 @@ public class ChatService {
 
     }
 
-    public void getChatsForUserUidAndCurrentUser(String otherUserUid) {
+    public void createNewChat(final String userUid, final OnChatCreatedListener listener) {
+        final FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference referenceCreator = db.collection(USER_CREDENTIALS).document(firebaseUser.getUid());
+        DocumentReference referenceReceiver = db.collection(USER_CREDENTIALS).document(userUid.trim());
+        Map<String, Object> chat = createChatMapArray(referenceCreator, referenceReceiver, "Sample_name");
+
+        db.collection(CHATS)
+                .add(chat)
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
+                        listener.onChatCreated(userUid, documentReference.getId());
+                    }
+                });
+    }
+
+    //TODO Implement support for multiple chat instances
+    public void getChatsForUserUidAndCurrentUser(final String otherUserUid, final OnChatsLoadedListener listener) {
         final FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         final FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference currentUser = db.collection(USER_CREDENTIALS).document(firebaseUser.getUid());
-        DocumentReference otherUser = db.collection(USER_CREDENTIALS).document(otherUserUid);
+        DocumentReference otherUser = db.collection(USER_CREDENTIALS).document(otherUserUid.trim());
 
 
         List<Task<QuerySnapshot>> tasks = new ArrayList<>();
@@ -102,7 +123,21 @@ public class ChatService {
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
+                        List<Chat> chats = new ArrayList<>();
+                        //TODO Fix this code repeat
+                        for (QueryDocumentSnapshot document : taskA.getResult()) {
+                            chats.add(
+                                    ChatHelper.getInstance().createChatFromQueryDocumentSnapshot(document)
+                            );
 
+                        }
+
+                        for (QueryDocumentSnapshot document : taskB.getResult()) {
+                            chats.add(
+                                    ChatHelper.getInstance().createChatFromQueryDocumentSnapshot(document)
+                            );
+                        }
+                        listener.onChatsLoaded(chats, otherUserUid);
                     }
                 });
     }
@@ -222,8 +257,8 @@ public class ChatService {
         HashMap<String, String> creatorMap = (HashMap<String, String>) data.get(CREATOR);
         HashMap<String, String> receiverMap = (HashMap<String, String>) data.get(RECEIVER);
 
-        User creator = new User(creatorMap.get("uid"), creatorMap.get(USERNAME), null);
-        User receiver = new User(receiverMap.get("uid"), receiverMap.get(USERNAME), null);
+        User creator = new User(creatorMap.get("id"), creatorMap.get(USERNAME), null);
+        User receiver = new User(receiverMap.get("id"), receiverMap.get(USERNAME), null);
 
         User chatDialogUser;
         if (!creator.getId().equals(currentUserId)) {

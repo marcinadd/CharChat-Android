@@ -13,6 +13,9 @@ public class User implements IUser {
         this.avatar = avatar;
     }
 
+    public User() {
+    }
+
     @Override
     public String getId() {
         return id;
@@ -26,5 +29,14 @@ public class User implements IUser {
     @Override
     public String getAvatar() {
         return avatar;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", avatar='" + avatar + '\'' +
+                '}';
     }
 }
