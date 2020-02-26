@@ -26,7 +26,6 @@ import com.marcinadd.charchat.chat.service.OnChatsLoadedListener;
 import com.marcinadd.charchat.people.OnUserListFragmentInteractionListener;
 import com.marcinadd.charchat.people.service.OnPeopleSearchLoadedListener;
 import com.marcinadd.charchat.people.service.PeopleService;
-import com.marcinadd.charchat.ui.chat.DialogsListFragmentDirections;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,16 +102,16 @@ public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoad
     public void onListFragmentInteraction(User item) {
         //TODO Implement chat loading
 
-        ChatService.getInstance().getChatsForUserUidAndCurrentUser(item.getId(), this);
+        ChatService.getInstance().getChatsForOtherAndCurrentUser(item.getId(), item.getName(), this);
     }
 
     @Override
-    public void onChatsLoaded(List<Chat> chats, String otherUserUid) {
+    public void onChatsLoaded(List<Chat> chats, String otherUserUid, String otherUserUsername) {
         if (chats.size() == 0) {
             // Create new chat and enter it
-            ChatService.getInstance().createNewChat(otherUserUid, new OnChatCreatedListener() {
+            ChatService.getInstance().createNewChat(otherUserUid, otherUserUsername, new OnChatCreatedListener() {
                 @Override
-                public void onChatCreated(String userUid, String chatId) {
+                public void onChatCreated(String userUid, String username, String chatId) {
                     navigateToChat(userUid, chatId);
                 }
             });
@@ -123,7 +122,7 @@ public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoad
     }
 
     private void navigateToChat(final String userUid, final String chatId) {
-        DialogsListFragmentDirections.ActionDialogsListFragmentToMessagesListFragment action = DialogsListFragmentDirections.actionDialogsListFragmentToMessagesListFragment();
+        SearchPeopleFragmentDirections.ActionNavSearchToMessagesListFragment action = SearchPeopleFragmentDirections.actionNavSearchToMessagesListFragment();
         action.setUserUid(userUid);
         action.setChatUid(chatId);
         Navigation.findNavController(mView).navigate(action);
