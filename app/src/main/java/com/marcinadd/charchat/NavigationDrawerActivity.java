@@ -14,7 +14,7 @@ import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.marcinadd.charchat.user.UserService;
+import com.marcinadd.charchat.user.UserHelper;
 
 public class NavigationDrawerActivity extends AppCompatActivity {
 
@@ -39,7 +39,7 @@ public class NavigationDrawerActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        UserService.getInstance().setSidebarData(navigationView.getHeaderView(0), firebaseUser);
+        UserHelper.getInstance().setSidebarData(navigationView.getHeaderView(0), firebaseUser);
     }
 
     @Override

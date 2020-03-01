@@ -21,4 +21,6 @@
     <string name="menu_search">Search</string>
     <string name="search_center_text">Click search button and enter username</string>
     <string name="not_found">Not Found!</string>
+    <string name="enter_your_new_username">Enter your new username</string>
+    <string name="set">Set</string>
 </resources>
