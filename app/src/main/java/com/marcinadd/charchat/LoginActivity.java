@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.marcinadd.charchat.user.UserHelper;
 import com.marcinadd.charchat.user.UserService;
 
 import java.util.Arrays;
@@ -32,7 +33,7 @@ public class LoginActivity extends AppCompatActivity implements UserService.OnUs
 
         if (user != null) {
             if (hasUsernameSet) {
-                startActivity(new Intent(this, NavigationDrawerActivity.class));
+                UserHelper.getInstance().startNavigationDrawer(this, false);
                 finish();
             } else {
                 // User returned to app without inserting username
@@ -68,9 +69,9 @@ public class LoginActivity extends AppCompatActivity implements UserService.OnUs
     }
 
     @Override
-    public void onUsernameAlreadySet() {
-        startActivity(new Intent(this, NavigationDrawerActivity.class));
-        finish();
+    public void onUsernameAlreadySet(String username) {
+        UserHelper.getInstance().startNavigationDrawer(this, true);
+        UserHelper.getInstance().saveCurrentUsernameInSharedPreferences(username, getApplicationContext());
     }
 
     @Override

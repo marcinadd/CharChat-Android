@@ -1,11 +1,18 @@
 package com.marcinadd.charchat.user;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
 import com.google.firebase.auth.FirebaseUser;
+import com.marcinadd.charchat.LoginActivity;
+import com.marcinadd.charchat.NavigationDrawerActivity;
 import com.marcinadd.charchat.R;
 
 public class UserHelper {
@@ -27,4 +34,16 @@ public class UserHelper {
         }
     }
 
+    public void startNavigationDrawer(Activity activity, boolean registerFCMToken) {
+        if (registerFCMToken) {
+            UserService.getInstance().registerFCMToken();
+        }
+        activity.startActivity(new Intent(activity, NavigationDrawerActivity.class));
+        activity.finish();
+    }
+
+    public void saveCurrentUsernameInSharedPreferences(String username, Context context) {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        preferences.edit().putString(LoginActivity.CURRENT_USER_USERNAME, username).apply();
+    }
 }

@@ -1,15 +1,13 @@
 package com.marcinadd.charchat;
 
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.marcinadd.charchat.user.UserHelper;
 import com.marcinadd.charchat.user.UserService;
 
 public class UsernameSetActivity extends AppCompatActivity implements UserService.OnUserUsernameSet {
@@ -37,10 +35,8 @@ public class UsernameSetActivity extends AppCompatActivity implements UserServic
 
     @Override
     public void onSuccess(String username) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        preferences.edit().putString(LoginActivity.CURRENT_USER_USERNAME, username).apply();
-        startActivity(new Intent(this, NavigationDrawerActivity.class));
-        finish();
+        UserHelper.getInstance().startNavigationDrawer(this, true);
+        UserHelper.getInstance().saveCurrentUsernameInSharedPreferences(username, getApplicationContext());
     }
 
     @Override
