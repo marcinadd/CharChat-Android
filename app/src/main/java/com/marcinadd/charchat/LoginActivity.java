@@ -19,7 +19,7 @@ import java.util.List;
 public class LoginActivity extends AppCompatActivity implements UserService.OnUserUsernameCheckDoneListener {
 
     private final int RC_SIGN_IN = 9659;
-    private final String CURRENT_USER_USERNAME = "username";
+    public static final String CURRENT_USER_USERNAME = "username";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +37,7 @@ public class LoginActivity extends AppCompatActivity implements UserService.OnUs
             } else {
                 // User returned to app without inserting username
                 startActivity(new Intent(this, UsernameSetActivity.class));
+                finish();
             }
         } else {
             login();

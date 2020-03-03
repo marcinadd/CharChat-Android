@@ -78,7 +78,6 @@ public class UserService {
 
     public interface OnUserUsernameSet {
         void onSuccess(String username);
-
         void onFailure();
     }
 }
