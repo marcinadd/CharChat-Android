@@ -1,6 +1,7 @@
 package com.marcinadd.charchat.chat.service;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -9,8 +10,13 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -25,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ChatService {
     private static final ChatService ourInstance = new ChatService();
@@ -151,7 +158,7 @@ public class ChatService {
         sampleChat.put(RECEIVER_REFERENCE, referenceReceiver);
         sampleChat.put(CREATOR, creatorModel);
         sampleChat.put(RECEIVER, receiverModel);
-        sampleChat.put("creator_hidden", true);
+        sampleChat.put(CREATOR_HIDDEN, true);
         return sampleChat;
     }
 
@@ -286,10 +293,10 @@ public class ChatService {
         return new Message(document.getId(), text, user, timestamp.toDate());
     }
 
-    public void sendMessage(Message message, String chatId) {
+    public void sendMessage(Message message, String chatId, String recipientId) {
         final FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection(getMessagesCollectionPath(chatId))
-                .document().set(new ChatMessage(message));
+                .document().set(new ChatMessage(message, recipientId));
     }
 
     public void getMessagesForSpecificChat(String chatId, final OnMessagesLoadedListener listener) {
@@ -309,6 +316,31 @@ public class ChatService {
                         listener.onMessagesLoaded(messages);
                     }
                 });
+    }
+
+    public ListenerRegistration listenToNewMessages(String chatId, final OnNewChatMessageArrivedListener listener) {
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final String currentUserUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        CollectionReference collection = db.collection(getMessagesCollectionPath(chatId));
+        final AtomicBoolean isFirst = new AtomicBoolean(true);
+        return collection.addSnapshotListener(new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(@Nullable QuerySnapshot querySnapshot, @Nullable FirebaseFirestoreException e) {
+                if (e != null || isFirst.get()) {
+                    isFirst.set(false);
+                    return;
+                }
+                for (DocumentChange dc : querySnapshot.getDocumentChanges()) {
+                    if (dc.getType().equals(DocumentChange.Type.ADDED)) {
+                        ChatMessage message = dc.getDocument().toObject(ChatMessage.class);
+                        message.setId(dc.getDocument().getId());
+                        if (!message.getSenderUid().equals(currentUserUid))
+                            listener.onNewChatMessageArrived(message);
+                    }
+                }
+            }
+        });
     }
 
     private String getMessagesCollectionPath(String chatId) {

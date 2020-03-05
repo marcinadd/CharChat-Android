@@ -4,7 +4,9 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.marcinadd.charchat.chat.db.model.Chat;
 import com.marcinadd.charchat.chat.db.model.ChatBuilder;
+import com.marcinadd.charchat.chat.db.model.ChatMessage;
 import com.marcinadd.charchat.chat.db.model.FieldNames;
+import com.marcinadd.charchat.chat.model.Message;
 import com.marcinadd.charchat.chat.model.User;
 
 import java.util.Date;
@@ -37,5 +39,10 @@ public class ChatHelper {
                 .setCreatorHidden(creatorHidden)
                 .setCreatedAt(createdAt != null ? createdAt.toDate() : new Date())
                 .createChat();
+    }
+
+    public Message createMessageFromChatMessage(ChatMessage message) {
+        User user = new User(message.getSenderUid(), null, null);
+        return new Message(message.getId(), message.getText(), user, message.getCreatedAt());
     }
 }
