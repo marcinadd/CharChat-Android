@@ -281,7 +281,7 @@ public class ChatService {
             chatDialogUser = new User(receiver.getId().trim(), receiver.getName(), null);
         }
         List<User> users = Collections.singletonList(chatDialogUser);
-        return new Dialog(document.getId(), null, chatDialogUser.getName(), users, message, 30);
+        return new Dialog(document.getId(), null, chatDialogUser.getName(), users, message, 0);
     }
 
     private Message createMessageFromQueryDocumentSnapshot(QueryDocumentSnapshot document) {
