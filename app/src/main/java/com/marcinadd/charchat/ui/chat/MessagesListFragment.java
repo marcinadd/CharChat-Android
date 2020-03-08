@@ -1,10 +1,12 @@
 package com.marcinadd.charchat.ui.chat;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -18,14 +20,22 @@ import com.marcinadd.charchat.chat.service.ChatHelper;
 import com.marcinadd.charchat.chat.service.ChatService;
 import com.marcinadd.charchat.chat.service.OnMessagesLoadedListener;
 import com.marcinadd.charchat.chat.service.OnNewChatMessageArrivedListener;
+import com.marcinadd.charchat.image.ImageService;
+import com.nguyenhoanglam.imagepicker.model.Config;
+import com.nguyenhoanglam.imagepicker.model.Image;
+import com.nguyenhoanglam.imagepicker.ui.imagepicker.ImagePicker;
 import com.stfalcon.chatkit.messages.MessageInput;
 import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class MessagesListFragment extends Fragment implements MessageInput.InputListener, OnMessagesLoadedListener, OnNewChatMessageArrivedListener {
+
+public class MessagesListFragment extends Fragment implements MessageInput.InputListener, OnMessagesLoadedListener, OnNewChatMessageArrivedListener, MessageInput.AttachmentsListener {
+
+    private static final int REQUEST_CODE_DOCUMENT_PROVIDER = 8590;
 
     private String chatId;
     private String anotherUserUid;
@@ -56,6 +66,7 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
 
         MessageInput messageInput = mView.findViewById(R.id.input);
         messageInput.setInputListener(this);
+        messageInput.setAttachmentsListener(this);
 
         ChatService.getInstance().getMessagesForSpecificChat(chatId, this);
         registration = ChatService.getInstance().listenToNewMessages(chatId, this);
@@ -87,5 +98,22 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
     public void onDetach() {
         super.onDetach();
         registration.remove();
+    }
+
+    @Override
+    public void onAddAttachments() {
+        ImagePicker.with(this)
+                .start();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (requestCode == Config.RC_PICK_IMAGES && data != null) {
+            ArrayList<Image> images = data.getParcelableArrayListExtra(Config.EXTRA_IMAGES);
+            for (Image image : images) {
+                ImageService.getInstance().uploadImageByPath(image.getPath());
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 }
