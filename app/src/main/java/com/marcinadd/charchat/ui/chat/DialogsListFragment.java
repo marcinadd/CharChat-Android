@@ -14,7 +14,7 @@ import com.marcinadd.charchat.R;
 import com.marcinadd.charchat.chat.model.Dialog;
 import com.marcinadd.charchat.chat.model.User;
 import com.marcinadd.charchat.chat.service.ChatService;
-import com.marcinadd.charchat.chat.service.OnDialogsLoadedListener;
+import com.marcinadd.charchat.chat.service.listener.OnDialogsLoadedListener;
 import com.stfalcon.chatkit.commons.models.IDialog;
 import com.stfalcon.chatkit.dialogs.DialogsList;
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter;

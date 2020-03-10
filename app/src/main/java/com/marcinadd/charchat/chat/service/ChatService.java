@@ -25,6 +25,11 @@ import com.marcinadd.charchat.chat.db.model.ChatMessage;
 import com.marcinadd.charchat.chat.model.Dialog;
 import com.marcinadd.charchat.chat.model.Message;
 import com.marcinadd.charchat.chat.model.User;
+import com.marcinadd.charchat.chat.service.listener.OnChatCreatedListener;
+import com.marcinadd.charchat.chat.service.listener.OnChatsLoadedListener;
+import com.marcinadd.charchat.chat.service.listener.OnDialogsLoadedListener;
+import com.marcinadd.charchat.chat.service.listener.OnMessagesLoadedListener;
+import com.marcinadd.charchat.chat.service.listener.OnNewChatMessageArrivedListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,37 +57,6 @@ public class ChatService {
 
     public static ChatService getInstance() {
         return ourInstance;
-    }
-
-    @Deprecated
-    public void createNewChatViaUsername(final String username) {
-        final FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        final FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        getUserByUsername(username, db, new Callback() {
-            @Override
-            public void onSuccess(QueryDocumentSnapshot document) {
-                DocumentReference referenceCreator = db.collection(USER_CREDENTIALS).document(firebaseUser.getUid());
-                DocumentReference referenceReceiver = db.collection(USER_CREDENTIALS).document(document.getId());
-                Map<String, Object> chat = createChatMapArray(referenceCreator, referenceReceiver, username);
-
-
-                db.collection(CHATS).document()
-                        .set(chat);
-//                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-//                            @Override
-//                            public void onSuccess(Void aVoid) {
-//                                Log.e("Succcess", "success");
-//                            }
-//                        });
-            }
-
-            @Override
-            public void onFailed() {
-
-            }
-        });
-
     }
 
     public void createNewChat(final String userUid, final String username, final OnChatCreatedListener listener) {
@@ -160,24 +134,6 @@ public class ChatService {
         sampleChat.put(RECEIVER, receiverModel);
         sampleChat.put(CREATOR_HIDDEN, true);
         return sampleChat;
-    }
-
-    private void getUserByUsername(String username, FirebaseFirestore db, final Callback callback) {
-        Query receiverUid = db.collection(USER_CREDENTIALS).whereEqualTo(USERNAME, username);
-        receiverUid.get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful() && task.getResult() != null) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                callback.onSuccess(document);
-                            }
-
-                        } else {
-                            callback.onFailed();
-                        }
-                    }
-                });
     }
 
     public void getChats(final OnDialogsLoadedListener listener) {
@@ -348,11 +304,6 @@ public class ChatService {
         return CHATS + "/" + (chatId.trim()) + "/messages";
     }
 
-
-    interface Callback {
-        void onSuccess(QueryDocumentSnapshot document);
-        void onFailed();
-    }
 
     private interface OnDialogsCreatedListener {
         void onDialogsCreated(List<Dialog> dialogs);

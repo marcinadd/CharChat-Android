@@ -1,4 +1,4 @@
-package com.marcinadd.charchat.chat.service;
+package com.marcinadd.charchat.chat.service.listener;
 
 import com.marcinadd.charchat.chat.model.Message;
 
