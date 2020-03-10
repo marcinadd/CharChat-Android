@@ -1,11 +1,10 @@
 package com.marcinadd.charchat.image;
 
-import android.util.Log;
-
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.marcinadd.charchat.image.listener.OnImageUploadedListener;
 
 import java.util.UUID;
 
@@ -19,7 +18,7 @@ public class ImageService {
         return ourInstance;
     }
 
-    public void uploadImageByPath(String path) {
+    public void uploadImageByPath(String path, final OnImageUploadedListener listener) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
@@ -29,7 +28,7 @@ public class ImageService {
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                Log.e("ABCD!", taskSnapshot.getMetadata().getPath());
+                listener.onImageUploaded(taskSnapshot.getMetadata().getPath());
             }
         });
     }

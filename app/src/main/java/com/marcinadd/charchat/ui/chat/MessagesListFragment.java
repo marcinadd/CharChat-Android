@@ -5,13 +5,17 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.marcinadd.charchat.R;
 import com.marcinadd.charchat.chat.db.model.ChatMessage;
 import com.marcinadd.charchat.chat.model.Message;
@@ -21,9 +25,11 @@ import com.marcinadd.charchat.chat.service.ChatService;
 import com.marcinadd.charchat.chat.service.OnMessagesLoadedListener;
 import com.marcinadd.charchat.chat.service.OnNewChatMessageArrivedListener;
 import com.marcinadd.charchat.image.ImageService;
+import com.marcinadd.charchat.image.listener.OnImageUploadedListener;
 import com.nguyenhoanglam.imagepicker.model.Config;
 import com.nguyenhoanglam.imagepicker.model.Image;
 import com.nguyenhoanglam.imagepicker.ui.imagepicker.ImagePicker;
+import com.stfalcon.chatkit.commons.ImageLoader;
 import com.stfalcon.chatkit.messages.MessageInput;
 import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
@@ -33,9 +39,7 @@ import java.util.Date;
 import java.util.List;
 
 
-public class MessagesListFragment extends Fragment implements MessageInput.InputListener, OnMessagesLoadedListener, OnNewChatMessageArrivedListener, MessageInput.AttachmentsListener {
-
-    private static final int REQUEST_CODE_DOCUMENT_PROVIDER = 8590;
+public class MessagesListFragment extends Fragment implements MessageInput.InputListener, OnMessagesLoadedListener, OnNewChatMessageArrivedListener, MessageInput.AttachmentsListener, OnImageUploadedListener {
 
     private String chatId;
     private String anotherUserUid;
@@ -61,7 +65,16 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
                              Bundle savedInstanceState) {
         View mView = inflater.inflate(R.layout.fragment_messages_list, container, false);
         MessagesList messagesList = mView.findViewById(R.id.messagesList);
-        adapter = new MessagesListAdapter<>(firebaseUser.getUid(), null);
+        final FirebaseStorage firebaseStorage = FirebaseStorage.getInstance();
+        adapter = new MessagesListAdapter<>(firebaseUser.getUid(), new ImageLoader() {
+            @Override
+            public void loadImage(ImageView imageView, @Nullable String url, @Nullable Object payload) {
+                StorageReference storageReference = firebaseStorage.getReference().child(url);
+                Glide.with(MessagesListFragment.this)
+                        .load(storageReference)
+                        .into(imageView);
+            }
+        });
         messagesList.setAdapter(adapter);
 
         MessageInput messageInput = mView.findViewById(R.id.input);
@@ -111,9 +124,15 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
         if (requestCode == Config.RC_PICK_IMAGES && data != null) {
             ArrayList<Image> images = data.getParcelableArrayListExtra(Config.EXTRA_IMAGES);
             for (Image image : images) {
-                ImageService.getInstance().uploadImageByPath(image.getPath());
+                ImageService.getInstance().uploadImageByPath(image.getPath(), this);
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onImageUploaded(String serverPath) {
+        Message message = new Message(null, "<image>", new User(currentUserUid, null, null), new Date(), serverPath);
+        ChatService.getInstance().sendMessage(message, chatId, anotherUserUid);
     }
 }

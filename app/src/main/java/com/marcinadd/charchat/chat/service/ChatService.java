@@ -290,7 +290,8 @@ public class ChatService {
 
         Timestamp timestamp = (Timestamp) data.get(CREATED_AT);
         String text = (String) data.get("text");
-        return new Message(document.getId(), text, user, timestamp.toDate());
+        String imagePath = (String) data.get("imagePath");
+        return new Message(document.getId(), text, user, timestamp.toDate(), imagePath);
     }
 
     public void sendMessage(Message message, String chatId, String recipientId) {

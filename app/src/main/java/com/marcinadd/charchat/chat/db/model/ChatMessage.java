@@ -10,11 +10,13 @@ public class ChatMessage {
     private Date createdAt;
     private String senderUid;
     private String recipientUid;
+    private String imagePath;
 
     public ChatMessage(Message message, String recipientUid) {
         this.text = message.getText();
         this.createdAt = message.getCreatedAt();
         this.senderUid = message.getUser().getId();
+        this.imagePath = message.getImageUrl();
         this.recipientUid = recipientUid;
     }
 
@@ -43,5 +45,9 @@ public class ChatMessage {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getImagePath() {
+        return imagePath;
     }
 }

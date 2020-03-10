@@ -43,6 +43,6 @@ public class ChatHelper {
 
     public Message createMessageFromChatMessage(ChatMessage message) {
         User user = new User(message.getSenderUid(), null, null);
-        return new Message(message.getId(), message.getText(), user, message.getCreatedAt());
+        return new Message(message.getId(), message.getText(), user, message.getCreatedAt(), message.getImagePath());
     }
 }
