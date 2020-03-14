@@ -6,6 +6,7 @@ import com.stfalcon.chatkit.commons.models.IMessage;
 import com.stfalcon.chatkit.commons.models.MessageContentType;
 
 import java.util.Date;
+import java.util.Objects;
 
 public class Message implements IMessage, MessageContentType.Image {
 
@@ -54,5 +55,18 @@ public class Message implements IMessage, MessageContentType.Image {
     @Override
     public String getImageUrl() {
         return imageUrl;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Message message = (Message) o;
+        return Objects.equals(getId(), message.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId());
     }
 }

@@ -12,6 +12,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -23,6 +24,7 @@ import com.marcinadd.charchat.chat.db.model.Chat;
 import com.marcinadd.charchat.chat.db.model.ChatMessage;
 import com.marcinadd.charchat.chat.model.Dialog;
 import com.marcinadd.charchat.chat.model.Message;
+import com.marcinadd.charchat.chat.model.User;
 import com.marcinadd.charchat.chat.service.listener.OnChatCreatedListener;
 import com.marcinadd.charchat.chat.service.listener.OnChatsLoadedListener;
 import com.marcinadd.charchat.chat.service.listener.OnDialogsLoadedListener;
@@ -117,8 +119,8 @@ public class ChatService {
     public void getChats(final OnDialogsLoadedListener listener) {
         final FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final ChatHelper chatHelper = ChatHelper.getInstance();
         DocumentReference userReference = db.collection(USER_CREDENTIALS.toString()).document(firebaseUser.getUid());
-
 
         final Task<QuerySnapshot> taskA = db.collection(CHATS.toString())
                 .whereEqualTo(RECEIVER_REFERENCE.toString(), userReference)
@@ -128,18 +130,19 @@ public class ChatService {
                 .whereEqualTo(CREATOR_REFERENCE.toString(), userReference)
                 .get();
 
-        List<Task<QuerySnapshot>> tasks = new ArrayList<>();
-        tasks.add(taskA);
-        tasks.add(taskB);
 
-        Tasks.whenAll(tasks)
+        Tasks.whenAll(taskA, taskB)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         final List<Dialog> dialogList = new ArrayList<>();
                         String currentUserId = firebaseUser.getUid();
-                        createDialogs(taskA.getResult(), currentUserId, db, onDialogsCreatedListener(dialogList, listener));
-                        createDialogs(taskB.getResult(), currentUserId, db, onDialogsCreatedListener(dialogList, listener));
+                        List<Chat> chats = new ArrayList<>();
+                        if (taskA.getResult() != null)
+                            chats.addAll(chatHelper.createChatsFromQuerySnapshot(taskA.getResult()));
+                        if (taskB.getResult() != null)
+                            chats.addAll(chatHelper.createChatsFromQuerySnapshot(taskB.getResult()));
+                        createDialogs(chats, currentUserId, db, onDialogsCreatedListener(dialogList, listener));
                     }
                 });
     }
@@ -157,47 +160,52 @@ public class ChatService {
         };
     }
 
-    //     FIXME Fix Loading sorting via date
-    private void createDialogs(final QuerySnapshot querySnapshot, final String currentUserId, FirebaseFirestore db, final OnDialogsCreatedListener listener) {
+
+    private void createDialogs(final List<Chat> chats, final String currentUserId, FirebaseFirestore db, final OnDialogsCreatedListener listener) {
         final List<Dialog> dialogs = new ArrayList<>();
-        final List<Task<QuerySnapshot>> tasks = new ArrayList<>();
-        for (final QueryDocumentSnapshot dialogDocument : querySnapshot
-        ) {
-            Task<QuerySnapshot> task = db.collection(getMessagesCollectionPath(dialogDocument.getId()))
+        List<Task<?>> tasksQuery = new ArrayList<>();
+        final ChatHelper chatHelper = ChatHelper.getInstance();
+        for (final Chat chat : chats) {
+
+            final Task<QuerySnapshot> getLastMessageTask = db.collection(getMessagesCollectionPath(chat.getId()))
                     .orderBy(CREATED_AT.toString(), Query.Direction.DESCENDING)
                     .limit(1)
-                    .get()
-                    .addOnCompleteListener(onLastMessageLoadedListener(dialogs, dialogDocument, currentUserId));
-            tasks.add(task);
+                    .get();
+
+            String otherUserId = chat.getCreator().getId().equals(currentUserId) ? chat.getReceiver().getId() : chat.getCreator().getId();
+
+            final Task<DocumentSnapshot> getAvatarTask = db.collection(USER_CREDENTIALS.toString())
+                    .document(otherUserId)
+                    .get();
+
+            tasksQuery.add(getAvatarTask);
+            tasksQuery.add(getLastMessageTask);
+
+            Tasks.whenAll(getLastMessageTask, getAvatarTask)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            List<ChatMessage> chatMessages = getLastMessageTask.getResult().toObjects(ChatMessage.class);
+                            User user = getAvatarTask.getResult().toObject(User.class);
+                            if (user != null) {
+                                user.setId(getAvatarTask.getResult().getId());
+                            }
+                            ChatMessage lastMessage = chatMessages.size() > 0 ? chatMessages.get(0) : null;
+                            Dialog dialog = chatHelper.createDialogFromObjects(chat, user, lastMessage);
+                            dialogs.add(dialog);
+
+                        }
+                    });
+
         }
 
-        Tasks.whenAll(tasks)
+        Tasks.whenAll(tasksQuery)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         listener.onDialogsCreated(dialogs);
                     }
                 });
-    }
-
-    private OnCompleteListener<QuerySnapshot> onLastMessageLoadedListener(final List<Dialog> dialogs, final QueryDocumentSnapshot dialogDocument, final String currentUserId) {
-        return new OnCompleteListener<QuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                ChatHelper chatHelper = ChatHelper.getInstance();
-                if (task.getResult() != null && task.getResult().size() != 0) {
-                    for (QueryDocumentSnapshot messageDocument : task.getResult()
-                    ) {
-                        Message message = ChatHelper.getInstance().createMessageFromMap(messageDocument.getData(), messageDocument.getId());
-                        Dialog dialog = chatHelper.createDialog(dialogDocument.getData(), dialogDocument.getId(), currentUserId, message);
-                        dialogs.add(dialog);
-                    }
-                } else {
-                    Dialog dialog = chatHelper.createDialog(dialogDocument.getData(), dialogDocument.getId(), currentUserId, null);
-                    dialogs.add(dialog);
-                }
-            }
-        };
     }
 
     public void sendMessage(Message message, String chatId, String recipientId) {

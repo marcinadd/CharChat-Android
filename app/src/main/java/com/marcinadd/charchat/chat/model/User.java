@@ -39,4 +39,8 @@ public class User implements IUser {
                 ", avatar='" + avatar + '\'' +
                 '}';
     }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }

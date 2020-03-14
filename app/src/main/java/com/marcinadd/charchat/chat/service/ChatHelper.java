@@ -2,6 +2,8 @@ package com.marcinadd.charchat.chat.service;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.marcinadd.charchat.chat.db.model.Chat;
 import com.marcinadd.charchat.chat.db.model.ChatBuilder;
 import com.marcinadd.charchat.chat.db.model.ChatMessage;
@@ -10,6 +12,7 @@ import com.marcinadd.charchat.chat.model.Dialog;
 import com.marcinadd.charchat.chat.model.Message;
 import com.marcinadd.charchat.chat.model.User;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -99,6 +102,23 @@ public class ChatHelper {
         sampleChat.put(RECEIVER.toString(), receiverModel);
         sampleChat.put(CREATOR_HIDDEN.toString(), true);
         return sampleChat;
+    }
+
+    public Dialog createDialogFromObjects(Chat chat, User otherUser, ChatMessage lastChatMessage) {
+        List<User> users = Collections.singletonList(otherUser);
+        Message lastMessage = createMessageFromChatMessage(lastChatMessage);
+        return new Dialog(chat.getId(), otherUser.getAvatar(), otherUser.getName(), users, lastMessage, 0);
+    }
+
+    public List<Chat> createChatsFromQuerySnapshot(QuerySnapshot snapshot) {
+        List<Chat> chats = new ArrayList<>();
+        for (QueryDocumentSnapshot document : snapshot
+        ) {
+            Chat chat = document.toObject(Chat.class);
+            chat.setId(document.getId());
+            chats.add(chat);
+        }
+        return chats;
     }
 
 }

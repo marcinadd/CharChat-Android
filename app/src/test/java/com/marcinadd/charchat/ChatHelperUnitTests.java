@@ -2,6 +2,7 @@ package com.marcinadd.charchat;
 
 import com.google.firebase.Timestamp;
 import com.marcinadd.charchat.chat.db.model.Chat;
+import com.marcinadd.charchat.chat.db.model.ChatMessage;
 import com.marcinadd.charchat.chat.db.model.FieldNames;
 import com.marcinadd.charchat.chat.model.Dialog;
 import com.marcinadd.charchat.chat.model.Message;
@@ -125,6 +126,21 @@ public class ChatHelperUnitTests {
         assertEquals(dialog.getId(), id);
         assertEquals(dialog.getLastMessage(), message);
         assertEquals(dialog.getDialogName(), usernameA);
+    }
+
+    @Test
+    public void whenCreateDialogFromObjects_shouldReturnDialog() {
+        Chat chat = new Chat();
+        chat.setId(id);
+        User creator = new User(idA, "user", null);
+        User receiver = new User(idB, "admin", null);
+        Message message = new Message(id + "a", text, creator, new Date());
+        ChatMessage chatMessage = new ChatMessage(message, idB);
+
+        Dialog dialog = ChatHelper.getInstance().createDialogFromObjects(chat, receiver, chatMessage);
+        assertEquals(dialog.getId(), id);
+        assertEquals(dialog.getLastMessage().getText(), message.getText());
+        assertEquals(dialog.getLastMessage().getId(), message.getId());
     }
 
 
