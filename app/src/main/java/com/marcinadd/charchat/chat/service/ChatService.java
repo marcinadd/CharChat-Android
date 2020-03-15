@@ -166,29 +166,37 @@ public class ChatService {
         List<Task<?>> tasksQuery = new ArrayList<>();
         final ChatHelper chatHelper = ChatHelper.getInstance();
         for (final Chat chat : chats) {
-
+            List<Task<?>> thisChatTasks = new ArrayList<>();
             final Task<QuerySnapshot> getLastMessageTask = db.collection(getMessagesCollectionPath(chat.getId()))
                     .orderBy(CREATED_AT.toString(), Query.Direction.DESCENDING)
                     .limit(1)
                     .get();
+            thisChatTasks.add(getLastMessageTask);
 
-            String otherUserId = chat.getCreator().getId().equals(currentUserId) ? chat.getReceiver().getId() : chat.getCreator().getId();
+            boolean isCreatorCurrentUser = chat.getCreator().getId().equals(currentUserId);
+            final String otherUserId = isCreatorCurrentUser ? chat.getReceiver().getId() : chat.getCreator().getId();
 
-            final Task<DocumentSnapshot> getAvatarTask = db.collection(USER_CREDENTIALS.toString())
-                    .document(otherUserId)
-                    .get();
+            Task<DocumentSnapshot> getOtherUserDataTask = null;
+            if (isCreatorCurrentUser || !chat.isCreatorHidden()) {
+                getOtherUserDataTask = db.collection(USER_CREDENTIALS.toString())
+                        .document(otherUserId)
+                        .get();
+                thisChatTasks.add(getOtherUserDataTask);
+            }
 
-            tasksQuery.add(getAvatarTask);
-            tasksQuery.add(getLastMessageTask);
+            tasksQuery.addAll(thisChatTasks);
 
-            Tasks.whenAll(getLastMessageTask, getAvatarTask)
+            final Task<DocumentSnapshot> finalGetOtherUserDataTask = getOtherUserDataTask;
+            Tasks.whenAll(thisChatTasks)
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
                             List<ChatMessage> chatMessages = getLastMessageTask.getResult().toObjects(ChatMessage.class);
-                            User user = getAvatarTask.getResult().toObject(User.class);
-                            if (user != null) {
-                                user.setId(getAvatarTask.getResult().getId());
+                            DocumentSnapshot userSnapshot = finalGetOtherUserDataTask != null ? finalGetOtherUserDataTask.getResult() : null;
+                            User user = new User(otherUserId, null, null);
+                            if (userSnapshot != null && userSnapshot.getData() != null) {
+                                user = ChatHelper.getInstance().createUserFromMap(userSnapshot.getData());
+                                user.setId(finalGetOtherUserDataTask.getResult().getId());
                             }
                             ChatMessage lastMessage = chatMessages.size() > 0 ? chatMessages.get(0) : null;
                             Dialog dialog = chatHelper.createDialogFromObjects(chat, user, lastMessage);

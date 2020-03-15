@@ -15,6 +15,7 @@ import com.marcinadd.charchat.chat.model.Dialog;
 import com.marcinadd.charchat.chat.model.User;
 import com.marcinadd.charchat.chat.service.ChatService;
 import com.marcinadd.charchat.chat.service.listener.OnDialogsLoadedListener;
+import com.marcinadd.charchat.image.MyImageLoader;
 import com.stfalcon.chatkit.commons.models.IDialog;
 import com.stfalcon.chatkit.dialogs.DialogsList;
 import com.stfalcon.chatkit.dialogs.DialogsListAdapter;
@@ -36,7 +37,7 @@ public class DialogsListFragment extends Fragment
         mView = inflater.inflate(R.layout.fragment_dialogs_list, container, false);
         progressLoader = mView.findViewById(R.id.progress_loader);
         DialogsList dialogsListView = mView.findViewById(R.id.dialogsList);
-        dialogsListAdapter = new DialogsListAdapter<Dialog>(null);
+        dialogsListAdapter = new DialogsListAdapter<Dialog>(new MyImageLoader(getActivity()));
         dialogsListView.setAdapter(dialogsListAdapter);
         dialogsListAdapter.setOnDialogClickListener(this);
         ChatService.getInstance().getChats(this);

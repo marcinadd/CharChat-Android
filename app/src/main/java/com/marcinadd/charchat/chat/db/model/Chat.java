@@ -1,5 +1,6 @@
 package com.marcinadd.charchat.chat.db.model;
 
+import com.google.firebase.firestore.PropertyName;
 import com.marcinadd.charchat.chat.model.User;
 
 import java.util.Date;
@@ -54,10 +55,12 @@ public class Chat {
         this.createdAt = createdAt;
     }
 
+    @PropertyName("creator_hidden")
     public boolean isCreatorHidden() {
         return creatorHidden;
     }
 
+    @PropertyName("creator_hidden")
     public void setCreatorHidden(boolean creatorHidden) {
         this.creatorHidden = creatorHidden;
     }

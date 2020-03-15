@@ -43,7 +43,7 @@ public class ChatHelper {
     }
 
     public User createUserFromMap(Map<String, Object> data) {
-        return new User((String) data.get(ID.toString()), (String) data.get(USERNAME.toString()), null);
+        return new User((String) data.get(ID.toString()), (String) data.get(USERNAME.toString()), (String) data.get("avatar"));
     }
 
     public Chat createChatFromMap(Map<String, Object> data, String id) {
@@ -107,6 +107,9 @@ public class ChatHelper {
     public Dialog createDialogFromObjects(Chat chat, User otherUser, ChatMessage lastChatMessage) {
         List<User> users = Collections.singletonList(otherUser);
         Message lastMessage = createMessageFromChatMessage(lastChatMessage);
+        if (otherUser.getName() == null) {
+            otherUser.setName("Secret");
+        }
         return new Dialog(chat.getId(), otherUser.getAvatar(), otherUser.getName(), users, lastMessage, 0);
     }
 
