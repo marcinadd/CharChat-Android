@@ -13,6 +13,8 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
+import com.marcinadd.charchat.chat.model.User;
+import com.marcinadd.charchat.chat.service.ChatHelper;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -88,6 +90,28 @@ public class UserService {
                                 .update("tokens", FieldValue.arrayUnion(token));
                     }
                 });
+    }
+
+    public void getUserCredentials(String uid, final OnUserCredentialsLoadedListener listener) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection(USER_CREDENTIALS)
+                .document(uid)
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        DocumentSnapshot userDocument = task.getResult();
+                        if (userDocument != null && userDocument.getData() != null) {
+                            User user = ChatHelper.getInstance().createUserFromMap(userDocument.getData());
+                            listener.onUserCredentialsLoaded(user);
+                        }
+
+                    }
+                });
+    }
+
+    public interface OnUserCredentialsLoadedListener {
+        void onUserCredentialsLoaded(User user);
     }
 
     public interface OnUserUsernameCheckDoneListener {

@@ -38,7 +38,7 @@ public class NavigationDrawerActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        UserHelper.getInstance().setSidebarData(navigationView.getHeaderView(0), firebaseUser);
+        UserHelper.getInstance().setSidebarData(navigationView.getHeaderView(0), firebaseUser, this);
     }
 
     @Override
