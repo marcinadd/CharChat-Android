@@ -18,11 +18,11 @@ public class ImageService {
         return ourInstance;
     }
 
-    public void uploadImageByPath(String path, final OnImageUploadedListener listener) {
+    public void uploadImageByPath(String path, String serverDirectory, final OnImageUploadedListener listener) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference();
 
-        StorageReference currentImageRef = storageRef.child("images/" + UUID.randomUUID().toString());
+        StorageReference currentImageRef = storageRef.child(serverDirectory + "/" + UUID.randomUUID().toString());
         byte[] data = ImageHelper.getInstance().getImageAsByteArray(path);
         UploadTask uploadTask = currentImageRef.putBytes(data);
         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {

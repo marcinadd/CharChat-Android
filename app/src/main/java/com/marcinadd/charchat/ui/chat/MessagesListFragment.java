@@ -45,6 +45,8 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
     private FirebaseUser firebaseUser;
     private ListenerRegistration registration;
 
+    private static final String IMAGES = "images";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,7 +113,7 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
         if (requestCode == Config.RC_PICK_IMAGES && data != null) {
             ArrayList<Image> images = data.getParcelableArrayListExtra(Config.EXTRA_IMAGES);
             for (Image image : images) {
-                ImageService.getInstance().uploadImageByPath(image.getPath(), this);
+                ImageService.getInstance().uploadImageByPath(image.getPath(), IMAGES, this);
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
