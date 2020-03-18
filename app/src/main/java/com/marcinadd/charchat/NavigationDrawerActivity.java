@@ -2,7 +2,6 @@ package com.marcinadd.charchat;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ImageView;
@@ -23,17 +22,19 @@ import com.marcinadd.charchat.image.ImageService;
 import com.marcinadd.charchat.image.listener.OnImageUploadedListener;
 import com.marcinadd.charchat.user.UserHelper;
 import com.marcinadd.charchat.user.avatar.AvatarClickDialogFragment;
+import com.marcinadd.charchat.user.avatar.AvatarHelper;
+import com.marcinadd.charchat.user.avatar.AvatarService;
 import com.nguyenhoanglam.imagepicker.model.Config;
 import com.nguyenhoanglam.imagepicker.model.Image;
 import com.nguyenhoanglam.imagepicker.ui.imagepicker.ImagePicker;
 
 import java.util.ArrayList;
 
-public class NavigationDrawerActivity extends AppCompatActivity {
+public class NavigationDrawerActivity extends AppCompatActivity implements AvatarService.OnAvatarUpdatedListener {
 
     private final String AVATARS = "avatars";
-
     private AppBarConfiguration mAppBarConfiguration;
+    private ImageView mImageViewAvatar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,10 +54,12 @@ public class NavigationDrawerActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        UserHelper.getInstance().setSidebarData(navigationView.getHeaderView(0), firebaseUser, this);
 
-        ImageView avatar = navigationView.getHeaderView(0).findViewById(R.id.navigation_header_avatar);
-        avatar.setOnClickListener(new View.OnClickListener() {
+        View headerView = navigationView.getHeaderView(0);
+        UserHelper.getInstance().setSidebarData(headerView, firebaseUser, this);
+
+        mImageViewAvatar = headerView.findViewById(R.id.navigation_header_avatar);
+        mImageViewAvatar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new AvatarClickDialogFragment().show(getSupportFragmentManager(), "TAG");
@@ -88,16 +91,31 @@ public class NavigationDrawerActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (requestCode == Config.RC_PICK_IMAGES && data != null) {
+            final ImageService imageService = ImageService.getInstance();
+            final AvatarService avatarService = AvatarService.getInstance();
             ArrayList<Image> images = data.getParcelableArrayListExtra(Config.EXTRA_IMAGES);
-            ImageService.getInstance().uploadImageByPath(images.get(0).getPath(), AVATARS, new OnImageUploadedListener() {
+            imageService.uploadImageByPath(images.get(0).getPath(), AVATARS, new OnImageUploadedListener() {
                 @Override
-                public void onImageUploaded(String serverPath) {
-                    Log.e("AAA", "UPLOADED!");
+                public void onImageUploaded(final String serverPath) {
+                    AvatarService.getInstance().deleteCurrentAvatarImageFromServer(new AvatarService.OnAvatarDeletedListener() {
+                        @Override
+                        public void onAvatarDeleted() {
+                            avatarService.updateAvatarInUserCredentials(serverPath, NavigationDrawerActivity.this);
+                        }
+                    });
                 }
             });
         }
-
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public void onAvatarUpdated(String newPath) {
+        AvatarHelper.getInstance().loadAvatarIntoImageView(newPath, this, mImageViewAvatar);
+    }
 }

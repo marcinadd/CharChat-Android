@@ -9,14 +9,12 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.marcinadd.charchat.LoginActivity;
 import com.marcinadd.charchat.NavigationDrawerActivity;
 import com.marcinadd.charchat.R;
 import com.marcinadd.charchat.chat.model.User;
+import com.marcinadd.charchat.user.avatar.AvatarHelper;
 
 public class UserHelper {
     private static final UserHelper ourInstance = new UserHelper();
@@ -29,7 +27,6 @@ public class UserHelper {
     }
 
     public void setSidebarData(final View headerView, FirebaseUser user, final Activity activity) {
-        final FirebaseStorage firebaseStorage = FirebaseStorage.getInstance();
         final TextView mTextViewUsername = headerView.findViewById(R.id.navigation_header_username);
         final ImageView mImageViewAvatar = headerView.findViewById(R.id.navigation_header_avatar);
         if (user != null) {
@@ -38,12 +35,8 @@ public class UserHelper {
                 @Override
                 public void onUserCredentialsLoaded(User user) {
                     mTextViewUsername.setText(user.getName());
-                    StorageReference storageReference;
                     if (user.getAvatar() != null) {
-                        storageReference = firebaseStorage.getReference().child(user.getAvatar());
-                        Glide.with(activity)
-                                .load(storageReference)
-                                .into(mImageViewAvatar);
+                        AvatarHelper.getInstance().loadAvatarIntoImageView(user.getAvatar(), activity, mImageViewAvatar);
                     }
                 }
             });

@@ -14,7 +14,8 @@ public enum FieldNames {
     SENDER_UID("senderUid"),
     TEXT("text"),
     IMAGE_PATH("imagePath"),
-    CREATOR_HIDDEN("creator_hidden");
+    CREATOR_HIDDEN("creator_hidden"),
+    AVATAR("avatar");
 
     private final String fieldName;
 
