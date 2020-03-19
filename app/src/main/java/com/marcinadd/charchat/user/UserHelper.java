@@ -9,10 +9,12 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.marcinadd.charchat.LoginActivity;
 import com.marcinadd.charchat.NavigationDrawerActivity;
 import com.marcinadd.charchat.R;
+import com.marcinadd.charchat.chat.db.model.FieldNames;
 import com.marcinadd.charchat.chat.model.User;
 import com.marcinadd.charchat.user.avatar.AvatarHelper;
 
@@ -53,6 +55,15 @@ public class UserHelper {
 
     public void saveCurrentUsernameInSharedPreferences(String username, Context context) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        preferences.edit().putString(LoginActivity.CURRENT_USER_USERNAME, username).apply();
+        preferences.edit().putString(FieldNames.USERNAME.toString(), username).apply();
+    }
+
+    public void logout(Activity activity) {
+        FirebaseAuth.getInstance().signOut();
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+        sharedPreferences.edit().remove(FieldNames.USERNAME.toString()).apply();
+        Intent intent = new Intent(activity, LoginActivity.class);
+        activity.startActivity(intent);
+        activity.finish();
     }
 }
