@@ -106,7 +106,7 @@ public class ChatHelper {
 
     public Dialog createDialogFromObjects(Chat chat, User otherUser, ChatMessage lastChatMessage) {
         List<User> users = Collections.singletonList(otherUser);
-        Message lastMessage = createMessageFromChatMessage(lastChatMessage);
+        Message lastMessage = lastChatMessage != null ? createMessageFromChatMessage(lastChatMessage) : null;
         if (otherUser.getName() == null) {
             otherUser.setName("Secret");
         }

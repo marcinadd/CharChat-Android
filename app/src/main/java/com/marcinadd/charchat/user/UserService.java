@@ -13,6 +13,7 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
+import com.marcinadd.charchat.chat.db.model.FieldNames;
 import com.marcinadd.charchat.chat.model.User;
 import com.marcinadd.charchat.chat.service.ChatHelper;
 
@@ -42,8 +43,8 @@ public class UserService {
                     public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                         if (task.isSuccessful()) {
                             DocumentSnapshot documentSnapshot = task.getResult();
-                            if (documentSnapshot.exists()) {
-                                listener.onUsernameAlreadySet(documentSnapshot.getString("username"));
+                            if (documentSnapshot != null && documentSnapshot.getString(FieldNames.USERNAME.toString()) != null) {
+                                listener.onUsernameAlreadySet(documentSnapshot.getString(FieldNames.USERNAME.toString()));
                             } else {
                                 listener.onUsernameNotExisting();
                             }
@@ -56,23 +57,24 @@ public class UserService {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("username", username);
-
-        db.collection(USER_CREDENTIALS)
-                .document(firebaseUser.getUid())
-                .set(data)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        listener.onSuccess(username);
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        listener.onFailure();
-                    }
-                });
+        data.put(FieldNames.USERNAME.toString(), username);
+        if (firebaseUser != null) {
+            db.collection(USER_CREDENTIALS)
+                    .document(firebaseUser.getUid())
+                    .set(data)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            listener.onSuccess(username);
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            listener.onFailure();
+                        }
+                    });
+        }
     }
 
     void registerFCMToken() {

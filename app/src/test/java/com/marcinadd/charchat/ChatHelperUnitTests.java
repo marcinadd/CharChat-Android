@@ -140,8 +140,5 @@ public class ChatHelperUnitTests {
         Dialog dialog = ChatHelper.getInstance().createDialogFromObjects(chat, receiver, chatMessage);
         assertEquals(dialog.getId(), id);
         assertEquals(dialog.getLastMessage().getText(), message.getText());
-        assertEquals(dialog.getLastMessage().getId(), message.getId());
     }
-
-
 }

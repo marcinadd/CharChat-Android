@@ -222,23 +222,40 @@ public class ChatService {
                 .document().set(new ChatMessage(message, recipientId));
     }
 
-    public void getMessagesForSpecificChat(String chatId, final OnMessagesLoadedListener listener) {
-        final FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection(getMessagesCollectionPath(chatId))
-                .orderBy(CREATED_AT.toString(), Query.Direction.DESCENDING)
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    List<Message> messages = new ArrayList<>();
 
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            Message message = ChatHelper.getInstance().createMessageFromMap(document.getData(), document.getId());
-                            messages.add(message);
-                        }
-                        listener.onMessagesLoaded(messages);
-                    }
-                });
+    public OnCompleteListener<QuerySnapshot> onMessagesForSpecifiedChatLoaded(final OnMessagesLoadedListener listener) {
+        return new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                List<Message> messages = new ArrayList<>();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    Message message = ChatHelper.getInstance().createMessageFromMap(document.getData(), document.getId());
+                    messages.add(message);
+                }
+                DocumentSnapshot oldestMessageSnapshot = null;
+                if (messages.size() >= 1) {
+                    oldestMessageSnapshot = task.getResult().getDocuments().get(messages.size() - 1);
+                }
+                listener.onMessagesLoaded(messages, oldestMessageSnapshot);
+            }
+        };
+    }
+
+    public void getMessagesForSpecificChat(
+            String chatId,
+            DocumentSnapshot oldestMessageSnapshot,
+            final OnMessagesLoadedListener listener
+    ) {
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Query query = db.collection(getMessagesCollectionPath(chatId))
+                .orderBy(CREATED_AT.toString(), Query.Direction.DESCENDING).limit(20);
+        if (oldestMessageSnapshot == null) {
+            query.get()
+                    .addOnCompleteListener(onMessagesForSpecifiedChatLoaded(listener));
+        } else {
+            query.startAfter(oldestMessageSnapshot).get()
+                    .addOnCompleteListener(onMessagesForSpecifiedChatLoaded(listener));
+        }
     }
 
     public ListenerRegistration listenToNewMessages(String chatId, final OnNewChatMessageArrivedListener listener) {

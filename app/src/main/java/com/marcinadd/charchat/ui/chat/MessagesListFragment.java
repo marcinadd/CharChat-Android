@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.marcinadd.charchat.R;
 import com.marcinadd.charchat.chat.db.model.ChatMessage;
@@ -35,7 +36,7 @@ import java.util.Date;
 import java.util.List;
 
 
-public class MessagesListFragment extends Fragment implements MessageInput.InputListener, OnMessagesLoadedListener, OnNewChatMessageArrivedListener, MessageInput.AttachmentsListener, OnImageUploadedListener {
+public class MessagesListFragment extends Fragment implements MessageInput.InputListener, OnMessagesLoadedListener, OnNewChatMessageArrivedListener, MessageInput.AttachmentsListener, OnImageUploadedListener, MessagesListAdapter.OnLoadMoreListener {
 
     private String chatId;
     private String anotherUserUid;
@@ -45,6 +46,7 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
     private FirebaseUser firebaseUser;
     private ListenerRegistration registration;
 
+    private DocumentSnapshot oldestMessageSnapshot;
     private static final String IMAGES = "images";
 
     @Override
@@ -70,9 +72,9 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
         messageInput.setInputListener(this);
         messageInput.setAttachmentsListener(this);
 
-        ChatService.getInstance().getMessagesForSpecificChat(chatId, this);
+        ChatService.getInstance().getMessagesForSpecificChat(chatId, oldestMessageSnapshot, this);
         registration = ChatService.getInstance().listenToNewMessages(chatId, this);
-
+        adapter.setLoadMoreListener(this);
         return mView;
     }
 
@@ -86,8 +88,14 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
 
 
     @Override
-    public void onMessagesLoaded(List<Message> messages) {
+    public void onMessagesLoaded(List<Message> messages, DocumentSnapshot oldestMessageSnapshot) {
         adapter.addToEnd(messages, false);
+        this.oldestMessageSnapshot = oldestMessageSnapshot;
+    }
+
+    @Override
+    public void onLoadMore(int page, int totalItemsCount) {
+        ChatService.getInstance().getMessagesForSpecificChat(chatId, oldestMessageSnapshot, this);
     }
 
     @Override
