@@ -1,6 +1,7 @@
 package com.marcinadd.charchat.user;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -8,15 +9,19 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.Transaction;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.marcinadd.charchat.chat.db.model.FieldNames;
 import com.marcinadd.charchat.chat.model.User;
 import com.marcinadd.charchat.chat.service.ChatHelper;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -89,9 +94,35 @@ public class UserService {
                         String token = task.getResult().getToken();
                         db.collection(USER_CREDENTIALS)
                                 .document(userId.trim())
-                                .update("tokens", FieldValue.arrayUnion(token));
+                                .update(FieldNames.TOKENS.toString(), FieldValue.arrayUnion(token));
                     }
                 });
+    }
+
+    public void deleteFCMTokenFromDB() {
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        final String userId = FirebaseAuth.getInstance().getUid();
+        final DocumentReference docRef = db.collection(USER_CREDENTIALS).document(userId);
+        FirebaseInstanceId.getInstance().getInstanceId().addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+            @Override
+            public void onComplete(@NonNull final Task<InstanceIdResult> task) {
+                if (!task.isSuccessful())
+                    return;
+                db.runTransaction(new Transaction.Function<Void>() {
+                    @Nullable
+                    @Override
+                    public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
+                        Map<String, Object> data = transaction.get(docRef).getData();
+                        ArrayList<String> tokens = (ArrayList<String>) data.get(FieldNames.TOKENS.toString());
+                        if (tokens != null && task.getResult() != null) {
+                            tokens.remove(task.getResult().getToken());
+                        }
+                        transaction.update(docRef, FieldNames.TOKENS.toString(), tokens);
+                        return null;
+                    }
+                });
+            }
+        });
     }
 
     public void getUserCredentials(String uid, final OnUserCredentialsLoadedListener listener) {

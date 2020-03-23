@@ -15,7 +15,8 @@ public enum FieldNames {
     TEXT("text"),
     IMAGE_PATH("imagePath"),
     CREATOR_HIDDEN("creator_hidden"),
-    AVATAR("avatar");
+    AVATAR("avatar"),
+    TOKENS("tokens");
 
     private final String fieldName;
 

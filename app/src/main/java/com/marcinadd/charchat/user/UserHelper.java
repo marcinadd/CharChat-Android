@@ -59,6 +59,7 @@ public class UserHelper {
     }
 
     public void logout(Activity activity) {
+        UserService.getInstance().deleteFCMTokenFromDB();
         FirebaseAuth.getInstance().signOut();
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
         sharedPreferences.edit().remove(FieldNames.USERNAME.toString()).apply();
