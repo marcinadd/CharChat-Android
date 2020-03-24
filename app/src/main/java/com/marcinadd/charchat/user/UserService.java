@@ -99,7 +99,7 @@ public class UserService {
                 });
     }
 
-    public void deleteFCMTokenFromDB() {
+    void deleteFCMTokenFromDB() {
         final FirebaseFirestore db = FirebaseFirestore.getInstance();
         final String userId = FirebaseAuth.getInstance().getUid();
         final DocumentReference docRef = db.collection(USER_CREDENTIALS).document(userId);

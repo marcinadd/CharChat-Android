@@ -5,8 +5,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -39,6 +42,7 @@ import java.util.List;
 public class MessagesListFragment extends Fragment implements MessageInput.InputListener, OnMessagesLoadedListener, OnNewChatMessageArrivedListener, MessageInput.AttachmentsListener, OnImageUploadedListener, MessagesListAdapter.OnLoadMoreListener {
 
     private String chatId;
+    private String chatName;
     private String anotherUserUid;
     private String currentUserUid;
 
@@ -49,12 +53,15 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
     private DocumentSnapshot oldestMessageSnapshot;
     private static final String IMAGES = "images";
 
+    private Toolbar toolbar;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             anotherUserUid = MessagesListFragmentArgs.fromBundle(getArguments()).getUserUid();
             chatId = MessagesListFragmentArgs.fromBundle(getArguments()).getChatUid();
+            chatName = MessagesListFragmentArgs.fromBundle(getArguments()).getChatName();
         }
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         currentUserUid = firebaseUser.getUid();
@@ -64,6 +71,10 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View mView = inflater.inflate(R.layout.fragment_messages_list, container, false);
+
+        TextView chatNameTextView = mView.findViewById(R.id.action_bar_title);
+        chatNameTextView.setText(chatName);
+
         MessagesList messagesList = mView.findViewById(R.id.messagesList);
         adapter = new MessagesListAdapter<>(firebaseUser.getUid(), new MyImageLoader(getActivity()));
         messagesList.setAdapter(adapter);
@@ -108,6 +119,7 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
     public void onDetach() {
         super.onDetach();
         registration.remove();
+        toolbar = null;
     }
 
     @Override
@@ -131,5 +143,27 @@ public class MessagesListFragment extends Fragment implements MessageInput.Input
     public void onImageUploaded(String serverPath) {
         Message message = new Message(null, "<image>", new User(currentUserUid, null, null), new Date(), serverPath);
         ChatService.getInstance().sendMessage(message, chatId, anotherUserUid);
+    }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        AppCompatActivity appCompatActivity = (AppCompatActivity) getActivity();
+        if (appCompatActivity != null && appCompatActivity.getSupportActionBar() != null) {
+            appCompatActivity.getSupportActionBar().hide();
+        }
+        toolbar = getView().findViewById(R.id.toolbar_chats);
+        appCompatActivity.setSupportActionBar(toolbar);
+        appCompatActivity.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        AppCompatActivity appCompatActivity = (AppCompatActivity) getActivity();
+        Toolbar toolbar = appCompatActivity.findViewById(R.id.toolbar);
+        appCompatActivity.setSupportActionBar(toolbar);
+        appCompatActivity.getSupportActionBar().show();
     }
 }

@@ -14,7 +14,7 @@
     <fragment
         android:id="@+id/messagesListFragment"
         android:name="com.marcinadd.charchat.ui.chat.MessagesListFragment"
-        android:label="fragment_messages_list"
+        android:label="@string/menu_messages"
         tools:layout="@layout/fragment_messages_list">
         <argument
             android:name="user_uid"
@@ -24,12 +24,16 @@
             android:name="chat_uid"
             android:defaultValue=" "
             app:argType="string" />
+        <argument
+            android:name="chat_name"
+            android:defaultValue=" "
+            app:argType="string" />
     </fragment>
 
     <fragment
         android:id="@+id/nav_chat"
         android:name="com.marcinadd.charchat.ui.chat.DialogsListFragment"
-        android:label="fragment_dialogs_list"
+        android:label="@string/menu_messages"
         tools:layout="@layout/fragment_dialogs_list">
         <action
             android:id="@+id/action_dialogsListFragment_to_messagesListFragment"
@@ -39,6 +43,9 @@
                 android:defaultValue=" " />
             <argument
                 android:name="chat_uid"
+                android:defaultValue=" " />
+            <argument
+                android:name="chat_name"
                 android:defaultValue=" " />
         </action>
     </fragment>

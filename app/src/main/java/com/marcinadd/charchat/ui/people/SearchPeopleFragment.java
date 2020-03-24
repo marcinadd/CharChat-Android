@@ -106,25 +106,26 @@ public class SearchPeopleFragment extends Fragment implements OnPeopleSearchLoad
     }
 
     @Override
-    public void onChatsLoaded(List<Chat> chats, String otherUserUid, String otherUserUsername) {
+    public void onChatsLoaded(List<Chat> chats, String otherUserUid, final String otherUserUsername) {
         if (chats.size() == 0) {
             // Create new chat and enter it
             ChatService.getInstance().createNewChat(otherUserUid, otherUserUsername, new OnChatCreatedListener() {
                 @Override
                 public void onChatCreated(String userUid, String username, String chatId) {
-                    navigateToChat(userUid, chatId);
+                    navigateToChat(userUid, chatId, otherUserUsername);
                 }
             });
         } else {
             //TODO Show list of anonymous chats
-            navigateToChat(otherUserUid, chats.get(0).getId());
+            navigateToChat(otherUserUid, chats.get(0).getId(), otherUserUsername);
         }
     }
 
-    private void navigateToChat(final String userUid, final String chatId) {
+    private void navigateToChat(final String userUid, final String chatId, final String username) {
         SearchPeopleFragmentDirections.ActionNavSearchToMessagesListFragment action = SearchPeopleFragmentDirections.actionNavSearchToMessagesListFragment();
         action.setUserUid(userUid);
         action.setChatUid(chatId);
+        action.setChatName(username);
         Navigation.findNavController(mView).navigate(action);
     }
 }

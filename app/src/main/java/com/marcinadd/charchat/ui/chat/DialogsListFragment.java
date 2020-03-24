@@ -57,6 +57,7 @@ public class DialogsListFragment extends Fragment
         User user = (User) dialog.getUsers().get(0);
         action.setUserUid(user.getId());
         action.setChatUid(dialog.getId());
+        action.setChatName(dialog.getDialogName());
         Navigation.findNavController(mView).navigate(action);
     }
 
